@@ -1,45 +1,42 @@
-from sqlalchemy.orm import query
-from sample_package.db_resource import db
 import datetime
 from datetime import datetime
 from os.path import getsize
 from xml.etree.ElementTree import tostring
+
 import psycopg2
 from click import DateTime
 from flask_restful.fields import Boolean, DateTime, Integer
 from psycopg2.extensions import Column
+from sqlalchemy.orm import query
 from sqlalchemy.sql.schema import Column, FetchedValue
 from sqlalchemy.types import Integer
 
+from sample_package.db_resource import db
+
+
 class sample_model(db.Model):
 
-    __table_args__ = {"schema":"information_schema"}
-    __tablename__ = "columns" 
+    __table_args__ = {"schema":"logging"}
+    __tablename__ = "t_history" 
 
-    table_catalog = db.Column( db.String )
-    table_schema = db.Column( db.String )
-    table_name = db.Column( db.String )
-    column_name = db.Column( db.String, primary_key=True )
+    id = db.Column( db.Integer, primary_key=True )
+    operation = db.Column( db.String )
 
-    def __init__(self,i_dbname,i_schemaname,i_tablename,i_columnname):
-        self.table_catalog=i_dbname
-        self.table_schema=i_schemaname
-        self.table_name=i_tablename
-        self.column_name=i_columnname
+    def __init__(self,i_id,i_operation):
+        self.id=i_id
+        self.operation=i_operation
+
     
     def json(self):
         return{
-            "database":self.table_catalog,
-            "schema_name":self.table_schema,
-            "table_name":self.table_name,
-            "column_name":self.column_name
+            "operation_id":self.id,
+            "operation":self.operation
         }
 
     @classmethod
-    def getColumn(self,in_database,in_schema,in_table):
+    def get_operation(self,in_id):
         try:
-            column=self.query.filter_by(table_catalog=in_database,table_schema=in_schema,table_name=in_table).all()
-            print(column)
-            return column
+            data=self.query.filter(self.id>in_id).all()
+            return data
         except:
             print("exception at model class")

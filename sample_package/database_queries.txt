@@ -1,0 +1,32 @@
+-- SCHEMA: logging
+
+-- DROP SCHEMA logging ;
+
+CREATE SCHEMA logging
+    AUTHORIZATION postgres;
+
+
+-- Table: logging.t_history
+
+-- DROP TABLE logging.t_history;
+
+CREATE TABLE logging.t_history
+(
+    id integer NOT NULL DEFAULT nextval('logging.t_history_id_seq'::regclass),
+    tstamp timestamp without time zone DEFAULT now(),
+    schemaname text COLLATE pg_catalog."default",
+    tabname text COLLATE pg_catalog."default",
+    operation text COLLATE pg_catalog."default",
+    who text COLLATE pg_catalog."default" DEFAULT CURRENT_USER,
+    new_val json,
+    old_val json
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE logging.t_history
+    OWNER to postgres;
+
+
