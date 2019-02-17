@@ -30,3 +30,123 @@ ALTER TABLE logging.t_history
     OWNER to postgres;
 
 
+-- Table: public.t_trig
+
+-- DROP TABLE public.t_trig;
+
+CREATE TABLE public.t_trig
+(
+    id integer,
+    name text COLLATE pg_catalog."default"
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.t_trig
+    OWNER to postgres;
+
+-- Trigger: t
+
+-- DROP TRIGGER t ON public.t_trig;
+
+CREATE TRIGGER t
+    BEFORE INSERT OR DELETE OR UPDATE 
+    ON public.t_trig
+    FOR EACH ROW
+    EXECUTE PROCEDURE public.change_trigger();
+
+-- Table: public.tbl_user
+
+-- DROP TABLE public.tbl_user;
+
+CREATE TABLE public.tbl_user
+(
+    user_name character varying(20) COLLATE pg_catalog."default",
+    user_id integer NOT NULL DEFAULT nextval('tbl_user_user_id_seq'::regclass),
+    user_address character varying(20) COLLATE pg_catalog."default",
+    user_password character varying(20) COLLATE pg_catalog."default",
+    CONSTRAINT tbl_user_pkey PRIMARY KEY (user_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.tbl_user
+    OWNER to postgres;
+
+-- FUNCTION: public.change_trigger()
+
+-- DROP FUNCTION public.change_trigger();
+
+CREATE FUNCTION public.change_trigger()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF SECURITY DEFINER 
+AS $BODY$
+
+        BEGIN
+
+                IF      TG_OP = 'INSERT'
+
+                THEN
+
+                        INSERT INTO logging.t_history (tabname, schemaname, operation, new_val)
+
+                                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, TG_OP, row_to_json(NEW));
+
+                        RETURN NEW;
+
+                ELSIF   TG_OP = 'UPDATE'
+
+                THEN
+
+                        INSERT INTO logging.t_history (tabname, schemaname, operation, new_val, old_val)
+
+                                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, TG_OP,
+
+                                        row_to_json(NEW), row_to_json(OLD));
+
+                        RETURN NEW;
+
+                ELSIF   TG_OP = 'DELETE'
+
+                THEN
+
+                        INSERT INTO logging.t_history (tabname, schemaname, operation, old_val)
+
+                                VALUES (TG_RELNAME, TG_TABLE_SCHEMA, TG_OP, row_to_json(OLD));
+
+                        RETURN OLD;
+
+                END IF;
+
+        END;
+
+$BODY$;
+
+ALTER FUNCTION public.change_trigger()
+    OWNER TO postgres;
+
+
+-- SEQUENCE: public.tbl_user_user_id_seq
+
+-- DROP SEQUENCE public.tbl_user_user_id_seq;
+
+CREATE SEQUENCE public.tbl_user_user_id_seq;
+
+ALTER SEQUENCE public.tbl_user_user_id_seq
+    OWNER TO postgres;
+
+
+-- SEQUENCE: logging.t_history_id_seq
+
+-- DROP SEQUENCE logging.t_history_id_seq;
+
+CREATE SEQUENCE logging.t_history_id_seq;
+
+ALTER SEQUENCE logging.t_history_id_seq
+    OWNER TO postgres;
